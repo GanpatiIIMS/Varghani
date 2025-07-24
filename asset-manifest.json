@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/Varghani/static/css/main.31e3a394.css",
-    "main.js": "/Varghani/static/js/main.932a85d3.js",
+    "main.css": "/Varghani/static/css/main.335e61de.css",
+    "main.js": "/Varghani/static/js/main.b8efcf34.js",
     "static/js/453.07b8cffd.chunk.js": "/Varghani/static/js/453.07b8cffd.chunk.js",
     "static/media/festive-bg.png": "/Varghani/static/media/festive-bg.176dff517ec9df2b4735.png",
     "static/media/ganpati-corner.png": "/Varghani/static/media/ganpati-corner.f6f3be4cfa7aa904af56.png",
     "index.html": "/Varghani/index.html",
-    "main.31e3a394.css.map": "/Varghani/static/css/main.31e3a394.css.map",
-    "main.932a85d3.js.map": "/Varghani/static/js/main.932a85d3.js.map",
+    "main.335e61de.css.map": "/Varghani/static/css/main.335e61de.css.map",
+    "main.b8efcf34.js.map": "/Varghani/static/js/main.b8efcf34.js.map",
     "453.07b8cffd.chunk.js.map": "/Varghani/static/js/453.07b8cffd.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.31e3a394.css",
-    "static/js/main.932a85d3.js"
+    "static/css/main.335e61de.css",
+    "static/js/main.b8efcf34.js"
   ]
 }
