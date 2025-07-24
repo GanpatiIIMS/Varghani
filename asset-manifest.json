@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/static/css/main.0ca9203e.css",
+    "main.js": "/static/js/main.57299736.js",
+    "static/js/453.07b8cffd.chunk.js": "/static/js/453.07b8cffd.chunk.js",
+    "static/media/festive-bg.png": "/static/media/festive-bg.176dff517ec9df2b4735.png",
+    "static/media/ganpati-corner.png": "/static/media/ganpati-corner.f6f3be4cfa7aa904af56.png",
+    "index.html": "/index.html",
+    "main.0ca9203e.css.map": "/static/css/main.0ca9203e.css.map",
+    "main.57299736.js.map": "/static/js/main.57299736.js.map",
+    "453.07b8cffd.chunk.js.map": "/static/js/453.07b8cffd.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0ca9203e.css",
+    "static/js/main.57299736.js"
+  ]
+}
