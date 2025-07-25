@@ -11,6 +11,12 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
+app.use(cors({
+  origin: 'https://ganpatiiims.github.io',
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
 // ---------- Send Email Route ----------
 app.post("/send-email", async (req, res) => {
   try {
