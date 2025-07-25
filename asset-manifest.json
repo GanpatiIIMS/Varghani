@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/Varghani/static/css/main.2341d563.css",
+    "main.js": "/Varghani/static/js/main.6575f5de.js",
+    "static/js/453.07b8cffd.chunk.js": "/Varghani/static/js/453.07b8cffd.chunk.js",
+    "static/media/festive-bg.png": "/Varghani/static/media/festive-bg.176dff517ec9df2b4735.png",
+    "static/media/ganpati-corner.png": "/Varghani/static/media/ganpati-corner.f6f3be4cfa7aa904af56.png",
+    "index.html": "/Varghani/index.html",
+    "main.2341d563.css.map": "/Varghani/static/css/main.2341d563.css.map",
+    "main.6575f5de.js.map": "/Varghani/static/js/main.6575f5de.js.map",
+    "453.07b8cffd.chunk.js.map": "/Varghani/static/js/453.07b8cffd.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2341d563.css",
+    "static/js/main.6575f5de.js"
+  ]
+}
