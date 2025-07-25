@@ -104,7 +104,7 @@ function VolunteerDashboard({ user }) {
       });
 
       // 🔁 NEW: Send Email via your Brevo-based backend
-      await fetch("https://ganpatiiims.github.io/Varghani/#/volunteer/send-email", {
+      await fetch("https://varghani.onrender.com/send-email", {
         method: "POST",
         headers: {
         "Content-Type": "application/json"
