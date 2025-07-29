@@ -90,6 +90,6 @@ app.post("/send-email", async (req, res) => {
 //   res.sendFile(path.join(__dirname, '../build', 'index.html'));
 // });
 
-// app.listen(PORT, () => {
-//   console.log(` Server running at ${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(` Server running at ${PORT}`);
+});
