@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/Varghani/static/css/main.7f099b65.css",
-    "main.js": "/Varghani/static/js/main.b5bfb3ba.js",
+    "main.js": "/Varghani/static/js/main.2facdfa0.js",
     "static/js/453.07b8cffd.chunk.js": "/Varghani/static/js/453.07b8cffd.chunk.js",
     "static/media/festive-bg.png": "/Varghani/static/media/festive-bg.176dff517ec9df2b4735.png",
     "static/media/ganpati-corner.png": "/Varghani/static/media/ganpati-corner.f6f3be4cfa7aa904af56.png",
@@ -37,11 +37,11 @@
     "static/media/qr1.jpg": "/Varghani/static/media/qr1.c509f716666974a60752.jpg",
     "index.html": "/Varghani/index.html",
     "main.7f099b65.css.map": "/Varghani/static/css/main.7f099b65.css.map",
-    "main.b5bfb3ba.js.map": "/Varghani/static/js/main.b5bfb3ba.js.map",
+    "main.2facdfa0.js.map": "/Varghani/static/js/main.2facdfa0.js.map",
     "453.07b8cffd.chunk.js.map": "/Varghani/static/js/453.07b8cffd.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.7f099b65.css",
-    "static/js/main.b5bfb3ba.js"
+    "static/js/main.2facdfa0.js"
   ]
 }
