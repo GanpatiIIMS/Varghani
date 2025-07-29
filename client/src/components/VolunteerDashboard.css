@@ -55,6 +55,7 @@
   display: block;
   margin: 0 auto 20px auto;
   width: 100%;
+  height: auto;
   max-width: 280px;
   border: 3px solid #f8bbd0;
   border-radius: 10px;
@@ -133,4 +134,41 @@ button:hover {
     font-size: 13px;
   }
 }
+.radio-options {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
 
+.radio-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #ad1457;
+}
+
+.radio-options input[type="radio"] {
+  transform: scale(1.2);
+  accent-color: #ad1457;
+}
+
+.success {
+  color: green;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.error {
+  color: red;
+  font-weight: 500;
+  margin-top: 10px;
+}
+.success {
+  color: green;
+  font-weight: bold;
+  margin: 15px 0;
+  text-align: center;
+}
