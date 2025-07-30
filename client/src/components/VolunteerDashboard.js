@@ -214,6 +214,11 @@ function VolunteerDashboard({ user }) {
           setAssignedCode(`Q${String(i).padStart(2, "0")}${slotId}`);
           setTimer(600);
 
+          if (intervalId) {
+            clearInterval(intervalId);
+          }
+
+
           const id = setInterval(() => {
             setTimer((prev) => {
               if (prev <= 1) {
@@ -240,21 +245,31 @@ function VolunteerDashboard({ user }) {
   };
 
   const handleSubmit = async () => {
-    if (submitLock.current) return;
-    submitLock.current = true;
-    setSubmitClicked(true);
-    const { name, studentId, emailId, amount } = formData;
-    setError("");
-    setSuccessMessage("");
-    if (!name || !studentId || !emailId || !amount || !paymentMode) {
-      setError("All fields are required including payment mode.");
-      submitLock.current = false;
-      setSubmitClicked(false);
-      return;
-    }
-    const submissionRef = doc(db, "Ganpati_SubmissionTracker", "dailyLimit");
-    const today = new Date().toISOString().split("T")[0];
+  if (submitLock.current) return;
+  submitLock.current = true;
+  setSubmitClicked(true);
+
+  const { name, studentId, emailId, amount } = formData;
+  setError("");
+  setSuccessMessage("");
+
+  if (!name || !studentId || !emailId || !amount || !paymentMode) {
+    setError("All fields are required including payment mode.");
+    submitLock.current = false;
+    setSubmitClicked(false);
+    return;
+  }
+
+  const submissionRef = doc(db, "Ganpati_SubmissionTracker", "dailyLimit");
+  const today = new Date().toISOString().split("T")[0];
+  const collectionName = `Ganpati_${new Date().getFullYear()}`;
+  const volunteerName = user.username;
+  const now = Timestamp.now();
+  let paymentDoneTo = "Cash Collection";
+
+  try {
     const submissionSnap = await getDoc(submissionRef);
+
     if (submissionSnap.exists()) {
       const data = submissionSnap.data();
       if (data.date !== today) {
@@ -267,65 +282,52 @@ function VolunteerDashboard({ user }) {
         return;
       } else {
         await updateDoc(submissionRef, { count: increment(1) });
-          const assignedSlotId = sessionStorage.getItem("assignedQRSlot");// Check if user has a reserved QR slot
-
-            if (assignedSlotId) {
-              const [qrIdx, slotId] = assignedSlotId.split(":");
-              const slotRef = doc(db, "Ganpati_QRTracker", qrIdx, "slots", slotId);
-              const slotSnap = await getDoc(slotRef);
-
-              if (slotSnap.exists()) {
-                const slotData = slotSnap.data();
-                if (slotData.status === "reserved") {
-                  await updateDoc(slotRef, {
-                    status: "completed",
-                    completedAt: Timestamp.now(),
-                  });
-                }
-              }
-
-              sessionStorage.removeItem("assignedQRSlot");
-            }
-        }
+      }
+    } else {
+      await setDoc(submissionRef, { date: today, count: 1 });
     }
 
-    setSubmitting(true);
-    const collectionName = `Ganpati_${new Date().getFullYear()}`;
-    const volunteerName = user.username;
-    const now = Timestamp.now();
-    let paymentDoneTo = "Cash Collection";
+    // UPI-specific logic
+    const assignedSlotId = sessionStorage.getItem("assignedQRSlot");
+    if (paymentMode === "UPI" && assignedSlotId) {
+      const [qrIdx, slotId] = assignedSlotId.split(":");
+      const slotRef = doc(db, "Ganpati_QRTracker", qrIdx, "slots", slotId);
+      const slotSnap = await getDoc(slotRef);
 
-    try {
-      if (paymentMode === "UPI") {
-        const trackerRef = doc(db, "Ganpati_QRTracker", "rolling");
-        const update = {
-          [`counts.${qrIndex}`]: increment(1),
-          [`lastUsed.${qrIndex}`]: now
-        };
-        await updateDoc(trackerRef, update);
-        paymentDoneTo = qrNameMapping[qrIndex] || `Person ${qrIndex}`;
+      if (slotSnap.exists()) {
+        const slotData = slotSnap.data();
+        if (slotData.status === "reserved") {
+          await updateDoc(slotRef, {
+            status: "completed",
+            completedAt: now
+          });
+        }
       }
-      const collectionName = `Ganpati_${new Date().getFullYear()}`;
-      await addDoc(collection(db, collectionName), {
-        ...formData,
-        amount: parseFloat(amount),
-        paymentDoneTo: qrNameMapping[qrIndex] || `Person ${qrIndex}`,
-        paymentMode,
-        volunteerName: user.username,
-        timestamp: Timestamp.now(),
-      });
-      await addDoc(collection(db, collectionName), {
-        ...formData,
-        amount: parseFloat(amount),
-        paymentDoneTo,
-        paymentMode,
-        volunteerName,
-        timestamp: now,
-        status: "completed"
-      });
 
-      // Delay in milliseconds between emails
-      const emailDelay = 2000; // 2 seconds
+      // Update rolling tracker
+      const trackerRef = doc(db, "Ganpati_QRTracker", "rolling");
+      const update = {
+        [`counts.${qrIdx}`]: increment(1),
+        [`lastUsed.${qrIdx}`]: now
+      };
+      await updateDoc(trackerRef, update);
+
+      paymentDoneTo = qrNameMapping[qrIdx] || `Person ${qrIdx}`;
+      sessionStorage.removeItem("assignedQRSlot");
+    }
+
+    // Common submission to Ganpati_2025
+    await addDoc(collection(db, collectionName), {
+      ...formData,
+      amount: parseFloat(amount),
+      paymentDoneTo,
+      paymentMode,
+      volunteerName,
+      timestamp: now,
+      status: "completed"
+    });
+
+    const emailDelay = 2000; // 2 seconds
 
       await new Promise(resolve => setTimeout(resolve, emailDelay));
 
@@ -340,26 +342,24 @@ function VolunteerDashboard({ user }) {
         })
       });
 
-      setSuccessMessage("Submitted successfully!");
-      clearInterval(intervalId);
-      sessionStorage.removeItem("assignedQRSlot");
-
-      setTimeout(() => {
-        setFormData({ name: "", studentId: "", emailId: "", amount: "" });
-        setPaymentMode("");
-        setSuccessMessage("");
-        setSubmitting(false);
-        submitLock.current = false;
-        setSubmitClicked(false);
-      }, 2000);
-    } catch (err) {
-      console.error("Submission failed:", err);
-      setError("Error submitting form. Please try again.");
+    setSuccessMessage("Submitted successfully!");
+    setSubmitting(false);
+    setTimeout(() => {
+      setFormData({ name: "", studentId: "", emailId: "", amount: "" });
+      setPaymentMode("");
+      setSuccessMessage("");
       submitLock.current = false;
-      setSubmitting(false);
       setSubmitClicked(false);
-    }
-  };
+    }, 2000);
+
+  } catch (err) {
+    console.error("Submission failed:", err);
+    setError("Error submitting the form. Please try again.");
+    setSubmitting(false);
+    submitLock.current = false;
+    setSubmitClicked(false);
+  }
+};
 
   const handleLogout = () => {
     auth.signOut().then(() => navigate("/"));
@@ -423,3 +423,4 @@ function VolunteerDashboard({ user }) {
 }
 
 export default VolunteerDashboard;
+
