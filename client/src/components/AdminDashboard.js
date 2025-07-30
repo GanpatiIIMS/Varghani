@@ -18,6 +18,7 @@ function AdminDashboard() {
   const [todayCash, setTodayCash] = useState(0);
   const [todayUPI, setTodayUPI] = useState(0);
   const [daywiseData, setDaywiseData] = useState([]);
+  const [qrDaywiseData, setQrDaywiseData] = useState([]);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -41,10 +42,12 @@ function AdminDashboard() {
 
       let totalToday = 0, cashToday = 0, upiToday = 0;
       const daySummary = {};
+      const qrDaywiseSummary = {};
 
       data.forEach((item) => {
         const amt = parseFloat(item.amount || 0);
         const mode = item.paymentMode || "Unknown";
+        const paidTo = item.paymentDoneTo || "Unknown";
         const ts = item.timestamp?.toDate?.() || new Date(item.timestamp);
 
         tempModes[mode] = (tempModes[mode] || 0) + amt;
@@ -64,6 +67,11 @@ function AdminDashboard() {
         if (mode === "Cash") daySummary[dateStr].cash += amt;
         else if (mode === "UPI") daySummary[dateStr].upi += amt;
         daySummary[dateStr].count += 1;
+
+        // QR-wise summary
+        if (!qrDaywiseSummary[dateStr]) qrDaywiseSummary[dateStr] = {};
+        if (!qrDaywiseSummary[dateStr][paidTo]) qrDaywiseSummary[dateStr][paidTo] = 0;
+        qrDaywiseSummary[dateStr][paidTo] += amt;
       });
 
       setGrouped(tempGroup);
@@ -78,6 +86,16 @@ function AdminDashboard() {
         upi: val.upi,
         count: val.count
       })).sort((a, b) => new Date(b.date) - new Date(a.date)));
+
+      setQrDaywiseData(
+        Object.entries(qrDaywiseSummary).map(([date, owners]) => {
+          const row = { date };
+          Object.entries(owners).forEach(([owner, amt]) => {
+            row[owner] = amt;
+          });
+          return row;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date))
+      );
     } catch (err) {
       console.error("Error fetching data:", err);
     }
@@ -155,10 +173,7 @@ function AdminDashboard() {
       <div className="daywise-summary">
         <h3>
           Day-wise Collection Summary
-          <span
-            onClick={() => setShowDaywise(!showDaywise)}
-            className="expand-toggle"
-          >
+          <span onClick={() => setShowDaywise(!showDaywise)} className="expand-toggle">
             {showDaywise ? "▲" : "▼"}
           </span>
         </h3>
@@ -244,10 +259,7 @@ function AdminDashboard() {
       <div className="all-records">
         <h3 style={{ marginTop: "30px" }}>
           All Records{" "}
-          <span
-            onClick={() => setShowAllRecords(!showAllRecords)}
-            className="expand-toggle"
-          >
+          <span onClick={() => setShowAllRecords(!showAllRecords)} className="expand-toggle">
             {showAllRecords ? "▲ Hide" : "▼ Show"}
           </span>
         </h3>
@@ -295,6 +307,44 @@ function AdminDashboard() {
         <button className="download-button" onClick={() => downloadXLSX(prepareAllRecords(), "All_Records")}>
           All Records
         </button>
+        <button className="download-button" onClick={() => downloadXLSX(qrDaywiseData, "QRWise_Daily_Summary")}>
+          QR-wise Daily Summary
+        </button>
+      </div>
+
+      <div className="qrwise-summary">
+        <h3 style={{ marginTop: "30px" }}>QR Owner Daily Summary</h3>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                {Object.keys(
+                  qrDaywiseData.reduce((acc, row) => {
+                    Object.keys(row).forEach((key) => {
+                      if (key !== "date") acc[key] = true;
+                    });
+                    return acc;
+                  }, {})
+                ).map((owner, i) => (
+                  <th key={i}>{owner}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {qrDaywiseData.map((row, i) => (
+                <tr key={i}>
+                  <td>{row.date}</td>
+                  {Object.keys(row)
+                    .filter((key) => key !== "date")
+                    .map((owner, j) => (
+                      <td key={j}>₹ {row[owner]}</td>
+                    ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

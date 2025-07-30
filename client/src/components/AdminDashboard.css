@@ -310,4 +310,33 @@ h2 {
   }
 }
 
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+  font-size: 14px;
+}
+
+.table-scroll th,
+.table-scroll td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.table-scroll th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+
 

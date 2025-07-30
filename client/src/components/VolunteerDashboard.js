@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   collection,
   addDoc,
@@ -7,7 +7,8 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  increment
+  increment,
+  getDocs
 } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +21,12 @@ function VolunteerDashboard({ user }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formDisabled, setFormDisabled] = useState(false);
-  const [upiLimitReached, setUpiLimitReached] = useState(false);
+  const [submitClicked, setSubmitClicked] = useState(false);
+  const [assignedCode, setAssignedCode] = useState("");
+  const [timer, setTimer] = useState(600);
+  const [intervalId, setIntervalId] = useState(null);
+  const submitLock = useRef(false);
+
   const [formData, setFormData] = useState({
     name: "",
     studentId: "",
@@ -30,12 +36,14 @@ function VolunteerDashboard({ user }) {
   const [paymentMode, setPaymentMode] = useState("");
 
   const navigate = useNavigate();
+
   const qrCountLimit = 10;
   const maxQr = 30;
   const limitPerDay = 300;
+  const qrCooldownHours = 24;
 
   const qrNameMapping = {
-    1: "Apte Prathamesh", 2: "R Megha(SBI)", 3: "Ajay M P", 4: "Nishita Jagati", 5: "Abhijit Sahoo",
+    1: "Apte Prathamesh", 2: "R Megha", 3: "Ajay M P", 4: "Nishita Jagati", 5: "Abhijit Sahoo",
     6: "Mehul Patil", 7: "Naimish Jagdale", 8: "Payal Jakhotia", 9: "Kanchsuhi Yalini", 10: "Lavish Dakare",
     11: "Anish Makwana", 12: "Tripti Arora", 13: "Viren Kohli", 14: "Siddhant Kesarkar", 15: "Shweta Deshmane",
     16: "Ashish Sharma", 17: "Chada Sweatcha", 18: "Manaswini Thugutla", 19: "Grishma Joshi", 20: "Shivani Thombre",
@@ -45,83 +53,189 @@ function VolunteerDashboard({ user }) {
 
   useEffect(() => {
     const fetchInitialData = async () => {
-  const qrTrackerRef = doc(db, "Ganpati_QRTracker", "rolling");
-  const submissionRef = doc(db, "Ganpati_SubmissionTracker", "dailyLimit");
+      const submissionRef = doc(db, "Ganpati_SubmissionTracker", "dailyLimit");
+      const now = Timestamp.now();
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(now.toMillis() + istOffset);
+      const resetTime = new Date(istNow);
+      resetTime.setHours(5, 30, 0, 0);
+      if (istNow < resetTime) resetTime.setDate(resetTime.getDate() - 1);
+      const submissionSnap = await getDoc(submissionRef);
 
-  const now = Timestamp.now();
-  const nowDate = new Date(now.toMillis());
+      if (submissionSnap.exists()) {
+        const data = submissionSnap.data();
+        const lastResetMillis = data.lastReset?.toMillis() || 0;
 
-  // Convert to IST
-  const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 mins
-  const istNow = new Date(nowDate.getTime() + istOffset);
-
-  // Set reset time to 5:30 AM IST of today
-  const resetTime = new Date(istNow);
-  resetTime.setHours(5, 30, 0, 0);
-  if (istNow < resetTime) {
-    resetTime.setDate(resetTime.getDate() - 1); // Use yesterday's 5:30 AM
-  }
-
-  // ------------------ QR ROTATION ------------------
-  const qrSnap = await getDoc(qrTrackerRef);
-  if (qrSnap.exists()) {
-    const data = qrSnap.data();
-    const lastUpdated = data.lastUpdated?.toMillis() || 0;
-
-    if (lastUpdated < resetTime.getTime()) {
-      await setDoc(qrTrackerRef, {
-        currentQrIndex: 1,
-        counts: { 1: 0 },
-        lastUpdated: now
-      });
-      setQrIndex(1);
-    } else {
-      setQrIndex(data.currentQrIndex || 1);
-
-      // Optional: Check if all QR slots are full
-      const counts = data.counts || {};
-      const allFilled = Object.keys(counts).length === maxQr &&
-        Object.values(counts).every(c => c >= qrCountLimit);
-      if (allFilled) {
-        setUpiLimitReached(true);
+        if (lastResetMillis < resetTime.getTime()) {
+          await setDoc(submissionRef, { count: 0, lastReset: now });
+        } else if (data.count >= limitPerDay) {
+          setFormDisabled(true);
+          setError("300 transactions completed today. Please come back after 5:30 AM IST.");
+        }
+      } else {
+        await setDoc(submissionRef, { count: 0, lastReset: now });
       }
-    }
-  } else {
-    await setDoc(qrTrackerRef, {
-      currentQrIndex: 1,
-      counts: { 1: 0 },
-      lastUpdated: now
-    });
-    setQrIndex(1);
-  }
-
-  // ------------------ DAILY LIMIT ------------------
-  const submissionSnap = await getDoc(submissionRef);
-  if (submissionSnap.exists()) {
-    const data = submissionSnap.data();
-    const lastResetMillis = data.lastReset?.toMillis() || 0;
-
-    if (lastResetMillis < resetTime.getTime()) {
-      await setDoc(submissionRef, {
-        count: 0,
-        lastReset: now
-      });
-    } else if (data.count >= limitPerDay) {
-      setFormDisabled(true);
-      setError("300 transactions completed today. Please come back after 5:30 AM IST.");
-    }
-  } else {
-    await setDoc(submissionRef, {
-      count: 0,
-      lastReset: now
-    });
-  }
-
-  setLoading(false);
-};
+      setLoading(false);
+    };
 
     fetchInitialData();
+
+    const stored = sessionStorage.getItem("assignedQRSlot");
+    if (stored) {
+      const [qrIdx, slotId] = stored.split(":");
+      const slotRef = doc(db, "Ganpati_QRTracker", qrIdx, "slots", slotId);
+      getDoc(slotRef).then((docSnap) => {
+        if (!docSnap.exists()) return;
+        const data = docSnap.data();
+        if ((data.status === "reserved" || data.count < qrCountLimit) && data.assignedTo === user.username) {
+          setQrIndex(Number(qrIdx));
+          setAssignedCode(`Q${String(qrIdx).padStart(2, "0")}${slotId}`);
+          setTimer(600);
+          const id = setInterval(() => {
+            setTimer((prev) => {
+              if (prev <= 1) {
+                clearInterval(id);
+                handleSlotExpiry();
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+          setIntervalId(id);
+        }
+      });
+    }
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const now = Date.now();
+      const slotsRef = collection(db, "Ganpati_QRTracker", qrIndex.toString(), "slots");
+      const snapshot = await getDocs(slotsRef);
+
+      snapshot.forEach(async (docSnap) => {
+        const data = docSnap.data();
+        if (
+          data.status === "reserved" &&
+          data.reservedAt &&
+          now - data.reservedAt.toMillis() > 10 * 60 * 1000
+        ) {
+          const slotRef = doc(db, "Ganpati_QRTracker", qrIndex.toString(), "slots", docSnap.id);
+          await updateDoc(slotRef, {
+            status: "available",
+            reservedBy: "",
+            reservedAt: null,
+          });
+        }
+      });
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [qrIndex]);
+
+  const handleSlotExpiry = async () => {
+    const assignedSlotId = sessionStorage.getItem("assignedQRSlot");
+    if (!assignedSlotId) return;
+    const [qrIdx, slotId] = assignedSlotId.split(":");
+    const slotRef = doc(db, "Ganpati_QRTracker", qrIdx, "slots", slotId);
+    try {
+      await updateDoc(slotRef, {
+        assignedTo: null,
+        assignedAt: null,
+        lastUsed: Timestamp.now(),
+        status: "available",
+        cooldownUntil: Timestamp.fromMillis(Date.now() + 2 * 60 * 1000)
+      });
+    } catch (err) {
+      console.error("Failed to mark slot as expired:", err);
+    }
+    sessionStorage.removeItem("assignedQRSlot");
+    setPaymentMode("");
+    setAssignedCode("");
+  };
+
+  const handlePaymentModeChange = async (mode) => {
+    setPaymentMode(mode);
+    if (mode === "UPI") {
+      const trackerRef = doc(db, "Ganpati_QRTracker", "rolling");
+      const trackerSnap = await getDoc(trackerRef);
+      const now = Timestamp.now();
+      if (trackerSnap.exists()) {
+        const data = trackerSnap.data();
+        const counts = data.counts || {};
+        const lastUsed = data.lastUsed || {};
+        for (let i = 1; i <= maxQr; i++) {
+          const count = counts[i] || 0;
+          const lastUsedTime = lastUsed[i]?.toDate?.() || new Date(0);
+          const hoursSinceLast = (now.toMillis() - lastUsedTime.getTime()) / (1000 * 60 * 60);
+          if (count < qrCountLimit || hoursSinceLast >= qrCooldownHours) {
+            setQrIndex(i);
+            const slotId = String(Math.floor(1 + Math.random() * 10)).padStart(2, "0");
+            
+            const slotRef = doc(db, "Ganpati_QRTracker", String(i), "slots", slotId);
+            const slotSnap = await getDoc(slotRef);
+
+            if (slotSnap.exists()) {
+              const slotData = slotSnap.data();
+
+              const completedAt = slotData.completedAt?.toMillis?.() || 0;
+              const nowMillis = now.toMillis();
+
+              const isAvailable = slotData.status === "available";
+              const isReservedByMe = slotData.status === "reserved" && slotData.assignedTo === user.username;
+              const isCompletedExpired = slotData.status === "completed" && (nowMillis - completedAt > 24 * 60 * 60 * 1000);
+
+              if (isAvailable || isReservedByMe || isCompletedExpired) {
+                await updateDoc(slotRef, {
+                  assignedTo: user.username,
+                  assignedAt: now,
+                  reservedAt: now,
+                  status: "reserved"
+                });
+
+                sessionStorage.setItem("assignedQRSlot", `${i}:${slotId}`);
+                setQrIndex(i);
+                setAssignedCode(`Q${String(i).padStart(2, "0")}${slotId}`);
+                setTimer(600);
+
+                const id = setInterval(() => {
+                  setTimer((prev) => {
+                    if (prev <= 1) {
+                      clearInterval(id);
+                      handleSlotExpiry();
+                      return 0;
+                    }
+                    return prev - 1;
+                  });
+                }, 1000);
+                setIntervalId(id);
+                break;
+              }
+            }
+
+
+            sessionStorage.setItem("assignedQRSlot", `${i}:${slotId}`);
+            setAssignedCode(`Q${String(i).padStart(2, "0")}${slotId}`);
+            setTimer(600);
+            const id = setInterval(() => {
+              setTimer((prev) => {
+                if (prev <= 1) {
+                  clearInterval(id);
+                  handleSlotExpiry();
+                  return 0;
+                }
+                return prev - 1;
+              });
+            }, 1000);
+            setIntervalId(id);
+            break;
+          }
+        }
+      }
+    }
+  };
+
+
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -130,19 +244,21 @@ function VolunteerDashboard({ user }) {
   };
 
   const handleSubmit = async () => {
+    if (submitLock.current) return;
+    submitLock.current = true;
+    setSubmitClicked(true);
     const { name, studentId, emailId, amount } = formData;
     setError("");
     setSuccessMessage("");
-
     if (!name || !studentId || !emailId || !amount || !paymentMode) {
       setError("All fields are required including payment mode.");
+      submitLock.current = false;
+      setSubmitClicked(false);
       return;
     }
-
     const submissionRef = doc(db, "Ganpati_SubmissionTracker", "dailyLimit");
     const today = new Date().toISOString().split("T")[0];
     const submissionSnap = await getDoc(submissionRef);
-
     if (submissionSnap.exists()) {
       const data = submissionSnap.data();
       if (data.date !== today) {
@@ -150,12 +266,31 @@ function VolunteerDashboard({ user }) {
       } else if (data.count >= limitPerDay) {
         setFormDisabled(true);
         setError("300 transactions completed today. Please come back tomorrow.");
+        submitLock.current = false;
+        setSubmitClicked(false);
         return;
       } else {
-        await updateDoc(submissionRef, {
-          count: increment(1)
-        });
-      }
+        await updateDoc(submissionRef, { count: increment(1) });
+          const assignedSlotId = sessionStorage.getItem("assignedQRSlot");// Check if user has a reserved QR slot
+
+            if (assignedSlotId) {
+              const [qrIdx, slotId] = assignedSlotId.split(":");
+              const slotRef = doc(db, "Ganpati_QRTracker", qrIdx, "slots", slotId);
+              const slotSnap = await getDoc(slotRef);
+
+              if (slotSnap.exists()) {
+                const slotData = slotSnap.data();
+                if (slotData.status === "reserved") {
+                  await updateDoc(slotRef, {
+                    status: "completed",
+                    completedAt: Timestamp.now(),
+                  });
+                }
+              }
+
+              sessionStorage.removeItem("assignedQRSlot");
+            }
+        }
     }
 
     setSubmitting(true);
@@ -167,27 +302,12 @@ function VolunteerDashboard({ user }) {
     try {
       if (paymentMode === "UPI") {
         const trackerRef = doc(db, "Ganpati_QRTracker", "rolling");
-        const trackerSnap = await getDoc(trackerRef);
-        const trackerData = trackerSnap.data();
-        let currentCount = trackerData.counts[qrIndex] || 0;
-
+        const update = {
+          [`counts.${qrIndex}`]: increment(1),
+          [`lastUsed.${qrIndex}`]: now
+        };
+        await updateDoc(trackerRef, update);
         paymentDoneTo = qrNameMapping[qrIndex] || `Person ${qrIndex}`;
-
-        if (currentCount >= qrCountLimit) {
-          let nextQr = qrIndex + 1 > maxQr ? 1 : qrIndex + 1;
-          setQrIndex(nextQr);
-
-          await updateDoc(trackerRef, {
-            [`counts.${nextQr}`]: 1,
-            currentQrIndex: nextQr,
-            lastUpdated: now
-          });
-        } else {
-          await updateDoc(trackerRef, {
-            [`counts.${qrIndex}`]: increment(1),
-            lastUpdated: now
-          });
-        }
       }
 
       await addDoc(collection(db, collectionName), {
@@ -196,8 +316,14 @@ function VolunteerDashboard({ user }) {
         paymentDoneTo,
         paymentMode,
         volunteerName,
-        timestamp: now
+        timestamp: now,
+        status: "completed"
       });
+
+      // Delay in milliseconds between emails
+      const emailDelay = 2000; // 2 seconds
+
+      await new Promise(resolve => setTimeout(resolve, emailDelay));
 
       await fetch("https://varghani.onrender.com/send-email", {
         method: "POST",
@@ -211,19 +337,23 @@ function VolunteerDashboard({ user }) {
       });
 
       setSuccessMessage("Submitted successfully!");
+      clearInterval(intervalId);
+      sessionStorage.removeItem("assignedQRSlot");
 
-      // Wait before resetting
       setTimeout(() => {
         setFormData({ name: "", studentId: "", emailId: "", amount: "" });
         setPaymentMode("");
         setSuccessMessage("");
         setSubmitting(false);
+        submitLock.current = false;
+        setSubmitClicked(false);
       }, 2000);
-
     } catch (err) {
       console.error("Submission failed:", err);
       setError("Error submitting form. Please try again.");
+      submitLock.current = false;
       setSubmitting(false);
+      setSubmitClicked(false);
     }
   };
 
@@ -238,9 +368,7 @@ function VolunteerDashboard({ user }) {
       <div className="top-row">
         <button className="logout-button" onClick={handleLogout}>Logout</button>
       </div>
-
       <h2 className="welcome-text">Welcome, {user.username}</h2>
-
       <div className="form-wrapper">
         {formDisabled ? (
           <p className="error">{error}</p>
@@ -249,63 +377,36 @@ function VolunteerDashboard({ user }) {
             <div className="input-group">
               <label>Payment Mode:</label>
               <div className="radio-options">
-                <label>
-                  <input
-                    type="radio"
-                    name="paymentMode"
-                    value="UPI"
-                    checked={paymentMode === "UPI"}
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                  />
-                  UPI
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="paymentMode"
-                    value="Cash"
-                    checked={paymentMode === "Cash"}
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                  />
-                  Cash
-                </label>
+                <label><input type="radio" name="paymentMode" value="UPI" checked={paymentMode === "UPI"} onChange={(e) => handlePaymentModeChange(e.target.value)} />UPI</label>
+                <label><input type="radio" name="paymentMode" value="Cash" checked={paymentMode === "Cash"} onChange={(e) => handlePaymentModeChange(e.target.value)} />Cash</label>
               </div>
             </div>
 
             {paymentMode && (
               <>
                 {paymentMode === "UPI" && (
-                  <img
-                    src={require(`../assets/qr${qrIndex}.jpg`)}
-                    alt={`QR ${qrIndex}`}
-                    className="qr-image"
-                  />
+                  <>
+                    <img src={require(`../assets/qr${qrIndex}.jpg`)} alt={`QR ${qrIndex}`} className="qr-image" />
+                    {assignedCode && (
+                      <div className="qr-index-title">
+                        QR ID: {assignedCode}<br />
+                        Time left to submit: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
+                      </div>
+                    )}
+                  </>
                 )}
 
-                <div className="input-group">
-                  <label>Name:</label>
-                  <input name="name" value={formData.name} onChange={handleChange} />
-                </div>
-                <div className="input-group">
-                  <label>Student ID:</label>
-                  <input name="studentId" value={formData.studentId} onChange={handleChange} />
-                </div>
-                <div className="input-group">
-                  <label>Email ID:</label>
-                  <input name="emailId" type="email" value={formData.emailId} onChange={handleChange} />
-                </div>
-                <div className="input-group">
-                  <label>Amount:</label>
-                  <input name="amount" type="number" value={formData.amount} onChange={handleChange} />
-                </div>
+                <div className="input-group"><label>Name:</label><input name="name" value={formData.name} onChange={handleChange} /></div>
+                <div className="input-group"><label>Student ID:</label><input name="studentId" value={formData.studentId} onChange={handleChange} /></div>
+                <div className="input-group"><label>Email ID:</label><input name="emailId" type="email" value={formData.emailId} onChange={handleChange} /></div>
+                <div className="input-group"><label>Amount:</label><input className="amount-input" name="amount" type="number" value={formData.amount} onChange={handleChange} /></div>
 
                 {error && <p className="error">{error}</p>}
+                {successMessage && <p className="success">{successMessage}</p>}
 
-                {successMessage ? (
-                  <p className="success">{successMessage}</p>
-                ) : (
-                  <button onClick={handleSubmit} disabled={submitting}>
-                    {submitting ? "Submitting..." : "Submit"}
+                {!successMessage && (
+                  <button onClick={handleSubmit} disabled={submitClicked}>
+                    {submitClicked ? <span className="spinner"></span> : "Submit"}
                   </button>
                 )}
               </>

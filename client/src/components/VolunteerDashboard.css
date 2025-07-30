@@ -95,6 +95,7 @@ button {
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  align-items: center;
 }
 
 button:hover {
@@ -159,6 +160,8 @@ button:hover {
   color: green;
   font-weight: 500;
   margin-top: 10px;
+  margin: 15px 0;
+  text-align: center;
 }
 
 .error {
@@ -166,9 +169,33 @@ button:hover {
   font-weight: 500;
   margin-top: 10px;
 }
-.success {
-  color: green;
-  font-weight: bold;
-  margin: 15px 0;
+
+.qr-index-title {
   text-align: center;
+  font-weight: 600;
+}
+
+/* formStyles.css */
+
+/* Chrome, Safari, Edge, Opera */
+.amount-input::-webkit-inner-spin-button,
+.amount-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3; /* Light gray background */
+  border-top: 2px solid #3498db; /* Blue spinning arc */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  margin-right: 8px; /* Optional spacing next to text */
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
