@@ -19,14 +19,14 @@ app.post("/send-email", async (req, res) => {
     console.log("POST /send-email route hit with data:", req.body);
 
     const data = {
-      sender: { name: "Ganpati Varghani App", email: process.env.SENDER_EMAIL },
+      sender: { name: "Ganpati Vargani App", email: process.env.SENDER_EMAIL },
       to: [{ email: to_email, name: to_name }],
       subject: "Thank you for your contribution!",
       htmlContent: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 2px solid #d4af37; border-radius: 8px; background-color: #fff9e6;;">
   <div style="text-align: center;">
     <img src="https://ganpatiiims.github.io/Assets/ganpati_receipt.png" style="width: 100%; object-fit: cover; border-radius: 8px 8px 0 0;">
     <h2 style="color: #d32f2f; margin: 20px 0 10px;"> Ganeshotsav 2025  </h2>
-    <h3 style="color: #000000ff; margin: 0px 0 10px;">Varghani Receipt</h3>
+    <h3 style="color: #000000ff; margin: 0px 0 10px;">Vargani Receipt</h3>
   <div style="text-align: center;">
     <p style="font-size: 14px; color: #444;">
       We warmly invite you to celebrate the auspicious occasion of Ganeshotsav with us!
