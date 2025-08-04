@@ -15,7 +15,7 @@ app.use(cors({
     "https://ganpatiiims.github.io"
   ],
   methods: ["GET", "POST"],
-  credentials: true
+  credentials: false
 }));
 app.use(express.json());
 
@@ -104,3 +104,4 @@ app.post("/send-email", async (req, res) => {
 app.listen(PORT, () => {
   //console.log(` Server running at ${PORT}`);
 });
+
