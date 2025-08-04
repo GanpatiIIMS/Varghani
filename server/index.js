@@ -4,11 +4,13 @@ const dotenv = require("dotenv");
 const axios = require("axios");
 const path = require("path");
 const fs = require('fs');
+// const Queue = require("bull");
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// app.use(cors());
 app.use(cors({
   origin: [
     "http://localhost:3000",
@@ -17,7 +19,6 @@ app.use(cors({
   methods: ["GET", "POST"],
   credentials: true
 }));
-
 app.use(express.json());
 
 // ---------- Send Email Route ----------
@@ -42,37 +43,33 @@ app.post("/send-email", async (req, res) => {
     </p>
 
   <hr style="border: 1px dashed #d4af37; margin: 20px 0;">
-<table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
-  <tr>
-    <!-- Left Side: Receipt Info -->
-    <td width="66%" valign="top" style="border-right: 2px dotted #d4af37; padding-right: 15px;">
-      <table width="100%" cellpadding="5" cellspacing="0" style="font-size: 15px; color: #333; line-height: 1.8;">
-        <tr>
-          <td width="45%"><strong>Receipt Date</strong></td>
-          <td width="5%">:</td>
-          <td width="50%">${date}</td>
-        </tr>
-        <tr>
-          <td><strong>Name</strong></td>
-          <td>:</td>
-          <td>${to_name}</td>
-        </tr>
-        <tr>
-          <td><strong>Amount</strong></td>
-          <td>:</td>
-          <td>₹ ${amount} /-</td>
-        </tr>
-      </table>
-    </td>
-
-    <!-- Right Side: Logo and Text -->
-    <td width="34%" valign="top" align="center" style="padding-left: 15px;">
-      <img src="https://ganpatiiims.github.io/Assets/logo.png" alt="Logo" style="width: 70px; height: auto; margin-bottom: 10px;">
-      <div style="font-size: 13px; color: #444;">Organizing Team</div>
-      <div style="font-size: 12px; color: #999;">Ganeshotsav Mandal, IIM Shillong</div>
-    </td>
+<div style="display: flex; align-items: flex-start; margin-top: 20px;">
+  <!-- Left: Table with 2/3rd width -->
+  <table style="width: 66%; font-size: 15px; color: #333; border-right: 2px dotted #d4af37; padding: 20px; line-height: 1.8;">
+  <tr style="height: 36px;">
+    <td style="text-align: left; width: 45%;"><strong>Receipt Date</strong></td>
+    <td style="text-align: center; width: 5%;">:</td>
+    <td style="text-align: left; width: 50%;">${date}</td>
+  </tr>
+  <tr style="height: 36px;">
+    <td style="text-align: left;width: 45%"><strong>Name</strong></td>
+    <td style="text-align: center;width: 5%">:</td>
+    <td style="text-align: left;width: 50%;">${to_name}</td>
+  </tr>
+  <tr style="height: 36px;">
+    <td style="text-align: left;width: 45%"><strong>Amount</strong></td>
+    <td style="text-align: center;width: 5%">:</td>
+    <td style="text-align: left;width: 50%;">₹ ${amount} /-</td>
   </tr>
 </table>
+
+  <!-- Right: Logo and text with 1/3rd width -->
+  <div style="width: 34%; text-align: center; justify-content: space-between; padding-left: 20px;">
+    <img style="width:34%; height 5%" src="https://ganpatiiims.github.io/Assets/logo.png" alt="Logo" style="width: 90px; height: auto; margin-bottom: 10px;" />
+    <div style="font-size: 13px; color: #444; margin-bottom: 3px;">Organizing Team</div>
+    <div style="font-size: 12px; color: #999;">Ganeshotsav Mandal, IIM Shillong</div>
+  </div>
+</div>
 <hr style="border: 1px dashed #d4af37; margin: 20px 0;">
     <p style="font-size: 14px; color: #555;">Thank you for your generous contribution!</p>
 </div>
@@ -94,17 +91,14 @@ app.post("/send-email", async (req, res) => {
 });
 
 
-// // Serve static files from the React build folder
-// app.use(express.static(path.join(__dirname, '../build')));
+// Serve static files from the React build folder
+app.use(express.static(path.join(__dirname, '../build')));
 
-// // Fallback to index.html for React Router
-// app.get('/', (req, res) => {
-//   res.sendFile(path.join(__dirname, '../build', 'index.html'));
-// });
-
-app.listen(PORT, () => {
-  //console.log(` Server running at ${PORT}`);
+// Fallback to index.html for React Router
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
-
-
+app.listen(PORT, () => {
+  console.log(` Server running at ${PORT}`);
+});
