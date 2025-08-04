@@ -479,7 +479,7 @@ function VolunteerDashboard({ user }) {
       // await new Promise(resolve => setTimeout(resolve, emailDelay));
 
       //await fetch("http://localhost:8080/send-email", {
-      await fetch("https://varghanicollectiontracker.onrender.com",{
+      await fetch("https://varghanicollectiontracker.onrender.com/send-email",{
         method: "POST",                                                                       
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -593,3 +593,4 @@ function VolunteerDashboard({ user }) {
 }
 
 export default VolunteerDashboard;
+
