@@ -254,7 +254,7 @@ function VolunteerDashboard({ user }) {
               sessionStorage.setItem("assignedQRSlot", `${i}:${slotId}`);
               setQrIndex(i);
               setAssignedCode(`Q${String(i).padStart(2, "0")}${slotId}`);
-              setTimer(60);
+              setTimer(300);
 
               if (intervalId) {
                 clearInterval(intervalId);
@@ -478,8 +478,8 @@ function VolunteerDashboard({ user }) {
 
       // await new Promise(resolve => setTimeout(resolve, emailDelay));
 
-      fetch("http://localhost:8080/send-email", {
-        method: "POST",
+      await fetch("http://localhost:8080/send-email", {
+        method: "POST",                                                                       
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to_name: name,
@@ -487,7 +487,8 @@ function VolunteerDashboard({ user }) {
           amount: amount,
           date: new Date().toLocaleDateString()
         })
-      });
+      }).catch(err => {
+        console.error("Error sending email:", err)});
 
       
       setSuccessMessage("Submitted successfully!");
@@ -562,10 +563,10 @@ function VolunteerDashboard({ user }) {
                       {/* {assignedCode && ( */}
                         <div className="qr-index-title">
                           QR ID: {assignedCode}<br />
-                          Time left to submit bfjsgjd: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
+                          Time left to submit: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
                         </div>
                       {/* )} */}
-                    </>) : (<span>Loading QR...</span>))
+                    </>) : (<span className="loading">Loading QR...</span>))
                 }
 
                 <div className="input-group"><label>Name:</label><input name="name" value={formData.name} onChange={handleChange} /></div>
@@ -575,9 +576,9 @@ function VolunteerDashboard({ user }) {
 
                 {error && <p className="error">{error}</p>}
                 {successMessage && <p className="success">{successMessage}</p>}
-
+                
                 {!successMessage && (
-                  <button onClick={handleSubmit} disabled={submitClicked}>
+                  <button onClick={handleSubmit} disabled= { submitClicked || (paymentMode === "UPI" && !assignedCode)}>
                     {submitClicked ? <span className="spinner"></span> : "Submit"}
                   </button>
                 )}
