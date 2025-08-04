@@ -91,14 +91,15 @@ app.post("/send-email", async (req, res) => {
 });
 
 
-// Serve static files from the React build folder
-app.use(express.static(path.join(__dirname, '../build')));
+// // Serve static files from the React build folder
+// app.use(express.static(path.join(__dirname, '../build')));
 
-// Fallback to index.html for React Router
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
-});
+// // Fallback to index.html for React Router
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../build', 'index.html'));
+// });
 
 app.listen(PORT, () => {
   console.log(` Server running at ${PORT}`);
 });
+
