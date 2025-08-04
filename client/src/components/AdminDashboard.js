@@ -13,13 +13,15 @@ function AdminDashboard() {
   const [paymentModeTotals, setPaymentModeTotals] = useState({ Cash: 0, UPI: 0 });
   const [expandedVolunteer, setExpandedVolunteer] = useState(null);
   const [showAllRecords, setShowAllRecords] = useState(false);
-  const [showDaywise, setShowDaywise] = useState(true);
+  const [showDaywise, setShowDaywise] = useState(false);
   const [todayTotal, setTodayTotal] = useState(0);
   const [todayCash, setTodayCash] = useState(0);
   const [todayUPI, setTodayUPI] = useState(0);
   const [daywiseData, setDaywiseData] = useState([]);
   const [qrDaywiseData, setQrDaywiseData] = useState([]);
   const navigate = useNavigate();
+  const [showQrSummary, setShowQrSummary] = useState(false); // start collapsed
+  const [qrOwnerTotals, setQrOwnerTotals] = useState({});
 
   const handleLogout = () => {
     auth.signOut().then(() => navigate("/"));
@@ -72,6 +74,14 @@ function AdminDashboard() {
         if (!qrDaywiseSummary[dateStr]) qrDaywiseSummary[dateStr] = {};
         if (!qrDaywiseSummary[dateStr][paidTo]) qrDaywiseSummary[dateStr][paidTo] = 0;
         qrDaywiseSummary[dateStr][paidTo] += amt;
+        // Step 1: Compute totals for each QR owner
+        // const qrOwnerTotals = {};
+        // Object.values(qrDaywiseSummary).forEach((owners) => {
+        //   Object.entries(owners).forEach(([owner, amt]) => {
+        //     qrOwnerTotals[owner] = (qrOwnerTotals[owner] || 0) + amt;
+        //   });
+        // });
+        // setQrOwnerTotals(qrOwnerTotals);
       });
 
       setGrouped(tempGroup);
@@ -139,6 +149,15 @@ function AdminDashboard() {
     );
   };
 
+  const allOwners = Object.keys(
+  qrDaywiseData.reduce((acc, row) => {
+    Object.keys(row).forEach((key) => {
+      if (key !== "date") acc[key] = true;
+    });
+    return acc;
+  }, {})
+);
+
   return (
     <div className="admin-dashboard">
       <div className="top-bar">
@@ -200,6 +219,7 @@ function AdminDashboard() {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}
@@ -312,7 +332,7 @@ function AdminDashboard() {
         </button>
       </div>
 
-      <div className="qrwise-summary">
+      {/* <div className="qrwise-summary">
         <h3 style={{ marginTop: "30px" }}>QR Owner Daily Summary</h3>
         <div className="table-scroll">
           <table>
@@ -345,6 +365,49 @@ function AdminDashboard() {
             </tbody>
           </table>
         </div>
+      </div> */}
+      <div className="qrwise-summary">
+        <h3 style={{ marginTop: "30px" }}>
+          QR Owner Daily Summary
+          <span onClick={() => setShowQrSummary(!showQrSummary)} className="expand-toggle">
+            {showQrSummary ? "▲" : "▼"}
+          </span>
+        </h3>
+
+        {showQrSummary && (
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  {allOwners.map((owner, i) => (
+                    <th key={i}>{owner}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {qrDaywiseData.map((row, i) => (
+                  <tr key={i}>
+                    <td>{row.date}</td>
+                    {allOwners.map((owner, j) => (
+                      <td key={j}>
+                        {row[owner] ? `₹ ${row[owner]}` : ""}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td><strong>Total</strong></td>
+                  {allOwners.map((owner, i) => (
+                    <td key={i}><strong>₹ {qrOwnerTotals[owner] || 0}</strong></td>
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
