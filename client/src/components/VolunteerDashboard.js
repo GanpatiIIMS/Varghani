@@ -164,7 +164,7 @@ function VolunteerDashboard({ user }) {
 
   const handleModeChange = async (mode) => {
     //const selectedMode = e.target.value;
-    console.log("Selected payment mode:", mode);
+    //console.log("Selected payment mode:", mode);
     setPaymentMode(mode);     // Update the selected radio mode
     if (intervalId) {
       clearInterval(intervalId);
@@ -211,9 +211,9 @@ function VolunteerDashboard({ user }) {
       if (hoursSinceLast > qrCooldownHours) {
         trackerSnap.data().counts[i] = 0; // Reset count if cooldown has passed
         await updateDoc(trackerRef, { [`counts.${i}`]: 0 });
-        console.log(`QR ${i} cooldown expired, resetting count.`);
+        //console.log(`QR ${i} cooldown expired, resetting count.`);
       }
-      console.log("QR: ", i,"QR count from rolling",count)
+      //console.log("QR: ", i,"QR count from rolling",count)
 
       // Check if the QR is available based on count and cooldown (should this logic or random generate shouldn't be there, increment logic can be done)
       if (count < qrCountLimit || hoursSinceLast >= qrCooldownHours) {
@@ -226,11 +226,11 @@ function VolunteerDashboard({ user }) {
 
             const reserved = await runTransaction(db, async (transaction) => {
               const slotSnap = await transaction.get(slotRef);
-              console.log("We are here!, qr id: ", i, "Slot ID: ", slotId, " slot snap exist ", slotSnap.exists());
+              //console.log("We are here!, qr id: ", i, "Slot ID: ", slotId, " slot snap exist ", slotSnap.exists());
               if (!slotSnap.exists()) return;
 
               const slotData = slotSnap.data();
-              console.log(`QR status`, slotData.status);
+              //console.log(`QR status`, slotData.status);
               const completedAt = slotData.completedAt?.toMillis?.() || 0;
               const nowMillis = Timestamp.now().toMillis();
 
@@ -478,7 +478,8 @@ function VolunteerDashboard({ user }) {
 
       // await new Promise(resolve => setTimeout(resolve, emailDelay));
 
-      await fetch("http://localhost:8080/send-email", {
+      //await fetch("http://localhost:8080/send-email", {
+      await fetch("https://varghanicollectiontracker.onrender.com",{
         method: "POST",                                                                       
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -492,7 +493,7 @@ function VolunteerDashboard({ user }) {
 
       
       setSuccessMessage("Submitted successfully!");
-      console.log("Form submitted successfully!");
+      //console.log("Form submitted successfully!");
       setSubmitting(false);
       setTimeout(() => {
         setFormData({ name: "", studentId: "", emailId: "", amount: "" });
