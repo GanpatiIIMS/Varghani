@@ -9,33 +9,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// app.use(cors({
-//   origin: [
-//     "http://localhost:3000",
-//     "https://ganpatiiims.github.io"
-//   ],
-//   methods: ["GET", "POST"],
-//   credentials: false
-// }));
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://ganpatiiims.github.io"
-];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
+  origin: [
+    "http://localhost:3000",
+    "https://ganpatiiims.github.io"
+  ],
+  methods: ["GET", "POST"],
+  credentials: true
 }));
-
-// Handle preflight requests
-app.options("*", cors());
 
 app.use(express.json());
 
@@ -124,5 +105,6 @@ app.post("/send-email", async (req, res) => {
 app.listen(PORT, () => {
   //console.log(` Server running at ${PORT}`);
 });
+
 
 
